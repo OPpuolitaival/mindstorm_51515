@@ -10,8 +10,9 @@ DOWN = 2
 LEFT = 3
 
 start_again = True
+use_buttons = False
 
-def wite_situation(hub, worm, apple):
+def write_situation(hub, worm, apple):
     for x in range(0,5):
         for y in range(0,5):
             if (x,y) in worm:
@@ -22,10 +23,20 @@ def wite_situation(hub, worm, apple):
                 hub.light_matrix.set_pixel(x, y, 0)
 
 def get_direction(hub, direction):
-    if hub.left_button.was_pressed():
-        return (direction-1) % 4
-    if hub.right_button.was_pressed():
-        return (direction+1) % 4
+    if use_buttons:
+        if hub.left_button.was_pressed():
+            return (direction-1) % 4
+        if hub.right_button.was_pressed():
+            return (direction+1) % 4
+    else:
+        if hub.motion_sensor.get_pitch_angle() > 20:
+            return DOWN
+        if hub.motion_sensor.get_pitch_angle() < -20:
+            return UP
+        if hub.motion_sensor.get_roll_angle() > 20:
+            return RIGHT
+        if hub.motion_sensor.get_roll_angle() < -20:
+            return LEFT
     return direction
 
 def move_worm(hub, worm, direction, apple):
@@ -40,7 +51,7 @@ def move_worm(hub, worm, direction, apple):
         next_step = (worm_head[0]-1, worm_head[1])
     if direction == RIGHT:
         next_step = (worm_head[0]+1, worm_head[1])
-    if min(next_step) < 0 or max(next_step) > 5 or next_step in worm:
+    if min(next_step) < 0 or max(next_step) > 4 or next_step in worm:
         return None, None, None
     if next_step == apple:
         apple = create_apple(worm)
@@ -60,7 +71,6 @@ def create_apple(worm):
 # The game loop
 hub = MSHub()
 
-
 while start_again == True:
     hub.status_light.on('green')
     direction = UP
@@ -69,7 +79,7 @@ while start_again == True:
 
     apple = create_apple(worm)
     while True:
-        wite_situation(hub, worm, apple)
+        write_situation(hub, worm, apple)
         wait_for_seconds(0.5)
         worm, direction, apple = move_worm(hub, worm, direction, apple)
         if worm is None:
@@ -85,4 +95,4 @@ while start_again == True:
             start_again = True
             break
         index += 1
-        wait_for_seconds(0.5)
+        wait_for_seconds(1)
